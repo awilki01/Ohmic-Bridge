@@ -27,10 +27,10 @@ class Manager(ControlSurface):
             self.start_logging()
             self.init_api()
 
-            self.show_message("AbletonOSC: Listening for OSC on port %d" % abletonosc.OSC_LISTEN_PORT)
-            logger.info("Started AbletonOSC on address %s" % str(self.osc_server._local_addr))
+            self.show_message("Ohmic Bridge: Listening for OSC on port %d" % abletonosc.OSC_LISTEN_PORT)
+            logger.info("Started Ohmic Bridge on address %s" % str(self.osc_server._local_addr))
         except OSError as msg:
-            self.show_message("AbletonOSC: Couldn't bind to port %d (%s)" % (abletonosc.OSC_LISTEN_PORT, msg))
+            self.show_message("Ohmic Bridge: Couldn't bind to port %d (%s)" % (abletonosc.OSC_LISTEN_PORT, msg))
             logger.info("Couldn't bind to port %d (%s)" % (abletonosc.OSC_LISTEN_PORT, msg))
 
 
