@@ -13,6 +13,10 @@ class ApplicationHandler(AbletonOSCHandler):
         self.osc_server.add_handler("/live/application/get/version", get_version)
         self.osc_server.send("/live/startup")
 
+        def heartbeat(_) -> Tuple:
+            return (1,)
+        self.osc_server.add_handler("/live/heartbeat", heartbeat)
+
         def get_average_process_usage(_) -> Tuple:
             application = Live.Application.get_application()
             return application.average_process_usage,
