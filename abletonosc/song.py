@@ -110,6 +110,63 @@ class SongHandler(AbletonOSCHandler):
             return tuple(self.song.tracks[index].name for index in range(track_index_min, track_index_max))
         self.osc_server.add_handler("/live/song/get/track_names", song_get_track_names)
 
+        #--------------------------------------------------------------------------------
+        # Bulk endpoints for session grid (optimized — fewer OSC round-trips)
+        #--------------------------------------------------------------------------------
+        def session_info(_):
+            """Return track metadata + song scale in one call.
+
+            Response: JSON string with track_names, track_colors, midi_tracks,
+            num_scenes, root_note, scale_name.
+            """
+            tracks = self.song.tracks
+            num_scenes = len(self.song.scenes)
+            track_names = []
+            track_colors = []
+            midi_tracks = []
+            for track in tracks:
+                track_names.append(track.name)
+                c = track.color
+                track_colors.append("#%02x%02x%02x" % ((c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF))
+                midi_tracks.append(bool(track.has_midi_input))
+            data = {
+                "track_names": track_names,
+                "track_colors": track_colors,
+                "midi_tracks": midi_tracks,
+                "num_scenes": num_scenes,
+                "root_note": self.song.root_note,
+                "scale_name": self.song.scale_name,
+            }
+            return (json.dumps(data),)
+        self.osc_server.add_handler("/live/song/get/session_info", session_info)
+
+        def clip_grid(_):
+            """Return occupied clip slots with names and colors in one call.
+
+            Response: JSON string with clips dict and clip_colors dict,
+            keyed by "track_idx,slot_idx".
+            """
+            tracks = self.song.tracks
+            num_scenes = len(self.song.scenes)
+            clips = {}
+            clip_colors = {}
+            for track_idx, track in enumerate(tracks):
+                for slot_idx, clip_slot in enumerate(track.clip_slots):
+                    if slot_idx >= num_scenes:
+                        break
+                    if clip_slot.clip is not None:
+                        key = "%d,%d" % (track_idx, slot_idx)
+                        name = clip_slot.clip.name
+                        clips[key] = name if name else "(unnamed)"
+                        c = clip_slot.clip.color
+                        clip_colors[key] = "#%02x%02x%02x" % ((c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF)
+            data = {
+                "clips": clips,
+                "clip_colors": clip_colors,
+            }
+            return (json.dumps(data),)
+        self.osc_server.add_handler("/live/song/get/clip_grid", clip_grid)
+
         def song_get_track_data(params):
             """
             Retrieve one more properties of a block of tracks and their clips.
